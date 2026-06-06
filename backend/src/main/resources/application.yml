@@ -4,31 +4,28 @@ server:
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/turtle_soup?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: root
-    password: your_password
+    username: turtlesoup
+    password: Ts2024!soup
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
-      mode: always
-      schema-locations: classpath:db/schema.sql
-      data-locations: classpath:db/data.sql
+      mode: never
 
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       id-type: auto
 
 # JWT 配置
 jwt:
-  secret: your-jwt-secret-key-must-be-at-least-256-bits-long
+  secret: turtle-soup-jwt-secret-key-2024-this-is-a-long-enough-key
   expiration: 86400000  # 24 hours
 
-# LLM API 配置
+# DeepSeek API 配置
 llm:
-  provider: openai  # openai 或 qwen
-  api-key: your-api-key
-  model: gpt-3.5-turbo
-  base-url: https://api.openai.com/v1
+  provider: deepseek
+  api-key: sk-c6f080a9d6c04cd1a5fbb96706f6fd77
+  model: deepseek-chat
+  base-url: https://api.deepseek.com/v1
