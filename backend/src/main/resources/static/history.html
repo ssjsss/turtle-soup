@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>海龟汤 - 历史记录</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a2e; color: #eee; min-height: 100vh;
+            padding-bottom: 60px;
+        }
+        .header {
+            display: flex; align-items: center; padding: 16px 20px;
+            background: #16213e;
+        }
+        .header h2 { font-size: 20px; margin-left: 12px; }
+        .back-btn {
+            background: none; border: none; color: #e94560; font-size: 18px; cursor: pointer;
+        }
+        .list { padding: 16px; }
+        .session-card {
+            background: #16213e; border-radius: 12px; padding: 16px;
+            margin-bottom: 12px; cursor: pointer; transition: transform 0.2s;
+        }
+        .session-card:active { transform: scale(0.98); }
+        .session-card .title-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px;
+        }
+        .session-card h3 { font-size: 16px; }
+        .session-card .status {
+            font-size: 12px; padding: 4px 10px; border-radius: 20px;
+        }
+        .status.IN_PROGRESS { background: #4caf50; color: #fff; }
+        .status.SOLVED { background: #f5a623; color: #000; }
+        .status.ABANDONED { background: #555; color: #ccc; }
+        .session-card .time { font-size: 13px; color: #8892b0; }
+        .empty { text-align: center; padding: 60px 20px; color: #8892b0; }
+        .empty .icon { font-size: 64px; margin-bottom: 16px; }
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            display: flex; background: #16213e; border-top: 1px solid #2a3a5c;
+        }
+        .nav-item {
+            flex: 1; text-align: center; padding: 12px 0;
+            color: #8892b0; cursor: pointer; font-size: 12px; text-decoration: none;
+        }
+        .nav-item.active { color: #e94560; }
+        .nav-item .nav-icon { font-size: 22px; display: block; margin-bottom: 2px; }
+        .chat-preview {
+            display: none; margin-top: 12px; padding-top: 12px;
+            border-top: 1px solid #2a3a5c;
+        }
+        .chat-preview .log-item {
+            margin-bottom: 8px; font-size: 13px;
+        }
+        .chat-preview .q { color: #e94560; }
+        .chat-preview .a { color: #4caf50; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="back-btn" onclick="location.href='/index.html'">←</button>
+        <h2>历史记录</h2>
+    </div>
+    <div class="list" id="historyList"></div>
+    <div class="empty" id="empty" style="display:none">
+        <div class="icon">📋</div>
+        <p>还没有游戏记录</p>
+        <button style="margin-top:16px;padding:12px 24px;border-radius:8px;border:none;background:#e94560;color:#fff;cursor:pointer;" onclick="location.href='/index.html'">去玩一局</button>
+    </div>
+    <div class="nav-bar">
+        <a class="nav-item" href="/index.html"><span class="nav-icon">🏠</span>首页</a>
+        <a class="nav-item active" href="/history.html"><span class="nav-icon">📋</span>历史</a>
+        <a class="nav-item" href="/profile.html"><span class="nav-icon">👤</span>我的</a>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        (async function init() {
+            if (!api.token) { location.href = '/login.html'; return; }
+            try {
+                const data = await api.get('/api/game/history');
+                if (!data || data.length === 0) {
+                    document.getElementById('empty').style.display = 'block';
+                    return;
+                }
+                const list = document.getElementById('historyList');
+                const statusMap = {
+                    'IN_PROGRESS': '进行中',
+                    'SOLVED': '已猜出',
+                    'ABANDONED': '已放弃'
+                };
+                data.forEach(session => {
+                    const card = document.createElement('div');
+                    card.className = 'session-card';
+                    card.innerHTML = `
+                        <div class="title-row">
+                            <h3>${session.title || '未知题目'}</h3>
+                            <span class="status ${session.status}">${statusMap[session.status] || session.status}</span>
+                        </div>
+                        <div class="time">${formatTime(session.startTime)}${session.endTime ? ' → ' + formatTime(session.endTime) : ''}</div>
+                        <div class="chat-preview" id="preview-${session.sessionId}"></div>
+                    `;
+                    card.onclick = () => toggleChat(session.sessionId);
+                    list.appendChild(card);
+                });
+            } catch (e) {
+                document.getElementById('empty').style.display = 'block';
+            }
+        })();
+
+        async function toggleChat(sessionId) {
+            const preview = document.getElementById('preview-' + sessionId);
+            if (preview.style.display === 'block') {
+                preview.style.display = 'none';
+                return;
+            }
+            if (preview.innerHTML) {
+                preview.style.display = 'block';
+                return;
+            }
+            try {
+                const logs = await api.get('/api/game/' + sessionId + '/chat');
+                let html = '';
+                logs.forEach(log => {
+                    html += `<div class="log-item"><span class="q">Q: ${log.userQuestion}</span><br><span class="a">A: ${log.aiReply}</span></div>`;
+                });
+                preview.innerHTML = html || '<div style="color:#8892b0">暂无对话</div>';
+                preview.style.display = 'block';
+            } catch (e) {
+                preview.innerHTML = '<div style="color:#e94560">加载失败</div>';
+                preview.style.display = 'block';
+            }
+        }
+
+        function formatTime(str) {
+            if (!str) return '';
+            const d = new Date(str);
+            return d.toLocaleString('zh-CN');
+        }
+    </script>
+</body>
+</html>
