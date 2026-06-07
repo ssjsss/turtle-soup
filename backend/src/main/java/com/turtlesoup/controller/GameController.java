@@ -46,15 +46,8 @@ public class GameController {
                                             @RequestBody AskRequest req,
                                             HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
-        return Result.ok(gameService.ask(sessionId, userId, req.question()));
-    }
-
-    @PostMapping("/{sessionId}/guess")
-    public Result<Map<String, Object>> guess(@PathVariable Long sessionId,
-                                              @RequestBody GuessRequest req,
-                                              HttpServletRequest request) {
-        Long userId = (Long) request.getAttribute("userId");
-        return Result.ok(gameService.guess(sessionId, userId, req.guess()));
+        Map<String, Object> result = gameService.ask(sessionId, userId, req.question());
+        return Result.ok(result);
     }
 
     @PostMapping("/{sessionId}/abandon")
@@ -106,5 +99,4 @@ public class GameController {
 
     public record StartRequest(Long puzzleId) {}
     public record AskRequest(String question) {}
-    public record GuessRequest(String guess) {}
 }

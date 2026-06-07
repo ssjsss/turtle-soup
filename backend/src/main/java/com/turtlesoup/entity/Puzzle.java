@@ -20,6 +20,8 @@ public class Puzzle {
 
     private String difficulty;
 
+    private String category;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
@@ -71,6 +73,14 @@ public class Puzzle {
 
     public void setDifficulty(String difficulty) {
         this.difficulty = difficulty;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public LocalDateTime getCreateTime() {

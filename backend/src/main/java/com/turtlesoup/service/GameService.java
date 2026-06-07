@@ -44,44 +44,38 @@ public class GameService {
         return session;
     }
 
+    /**
+     * 统一处理用户输入：AI 自动判断是提问还是宣告结论
+     */
     @Transactional
     public Map<String, Object> ask(Long sessionId, Long userId, String question) {
         GameSession session = validateSession(sessionId, userId);
 
         Puzzle puzzle = puzzleMapper.selectById(session.getPuzzleId());
-        String aiReply = llmService.judge(question, puzzle.getAnswer());
+        LlmService.JudgeResult result = llmService.judge(question, puzzle.getAnswer());
 
+        // 保存对话
         ChatLog log = new ChatLog();
         log.setSessionId(sessionId);
         log.setUserQuestion(question);
-        log.setAiReply(aiReply);
+        log.setAiReply(result.reply());
         chatLogMapper.insert(log);
 
-        return Map.of("reply", aiReply);
-    }
-
-    @Transactional
-    public Map<String, Object> guess(Long sessionId, Long userId, String guess) {
-        GameSession session = validateSession(sessionId, userId);
-
-        Puzzle puzzle = puzzleMapper.selectById(session.getPuzzleId());
-        boolean correct = llmService.matchesAnswer(guess, puzzle.getAnswer());
-
-        if (correct) {
+        if (result.solved()) {
             session.setStatus("SOLVED");
             session.setEndTime(LocalDateTime.now());
             sessionMapper.updateById(session);
 
             return Map.of(
-                    "correct", true,
-                    "message", "恭喜你猜对了！",
+                    "reply", result.reply(),
+                    "solved", true,
                     "answer", puzzle.getAnswer()
             );
         }
 
         return Map.of(
-                "correct", false,
-                "message", "不对，再想想"
+                "reply", result.reply(),
+                "solved", false
         );
     }
 
@@ -108,7 +102,6 @@ public class GameService {
     }
 
     public List<ChatLog> getChatLogs(Long sessionId, Long userId) {
-        // 验证权限
         GameSession session = sessionMapper.selectById(sessionId);
         if (session == null || !session.getUserId().equals(userId)) {
             throw new RuntimeException("无权访问该会话");
