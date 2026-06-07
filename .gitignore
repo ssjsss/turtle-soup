@@ -1,0 +1,19 @@
+# Maven
+backend/target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.pem
+*.tar.gz
+
+# 敏感配置文件
+**/application-local.yml

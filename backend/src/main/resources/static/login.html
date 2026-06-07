@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>海龟汤 - 登录注册</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+        .container {
+            width: 100%; max-width: 380px;
+            background: #16213e; border-radius: 16px; padding: 30px 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center; font-size: 28px; margin-bottom: 8px;
+            background: linear-gradient(135deg, #e94560, #f5a623);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle { text-align: center; color: #8892b0; font-size: 14px; margin-bottom: 28px; }
+        .tab-bar {
+            display: flex; margin-bottom: 24px;
+            border-radius: 10px; background: #0f3460; overflow: hidden;
+        }
+        .tab {
+            flex: 1; text-align: center; padding: 12px;
+            color: #8892b0; cursor: pointer; font-size: 15px; transition: all 0.3s;
+        }
+        .tab.active { background: #e94560; color: #fff; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 14px; color: #a8b2d1; }
+        .form-group input {
+            width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #2a3a5c;
+            background: #0f3460; color: #eee; font-size: 15px; outline: none;
+        }
+        .form-group input:focus { border-color: #e94560; }
+        .btn {
+            width: 100%; padding: 14px; border: none; border-radius: 8px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+            background: linear-gradient(135deg, #e94560, #f5a623); color: #fff;
+            margin-top: 8px;
+        }
+        .btn:active { opacity: 0.85; }
+        .error-msg { color: #e94560; font-size: 13px; margin-top: 8px; text-align: center; display: none; }
+        #nicknameGroup { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>海龟汤</h1>
+        <p class="subtitle">推理问答游戏</p>
+        <div class="tab-bar">
+            <div class="tab active" onclick="switchTab('login')">登录</div>
+            <div class="tab" onclick="switchTab('register')">注册</div>
+        </div>
+        <div id="nicknameGroup" class="form-group">
+            <label>昵称</label>
+            <input type="text" id="nickname" placeholder="给自己取个名字">
+        </div>
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="text" id="username" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+            <label>密码</label>
+            <input type="password" id="password" placeholder="请输入密码（至少6位）">
+        </div>
+        <button class="btn" id="submitBtn" onclick="submitForm()">登录</button>
+        <p class="error-msg" id="errorMsg"></p>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        let mode = 'login';
+
+        function switchTab(tab) {
+            mode = tab;
+            document.querySelectorAll('.tab').forEach((t, i) => {
+                t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'register'));
+            });
+            document.getElementById('nicknameGroup').style.display = tab === 'register' ? 'block' : 'none';
+            document.getElementById('submitBtn').textContent = tab === 'login' ? '登录' : '注册';
+            document.getElementById('errorMsg').style.display = 'none';
+        }
+
+        async function submitForm() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const nickname = document.getElementById('nickname').value.trim();
+            const errorEl = document.getElementById('errorMsg');
+            errorEl.style.display = 'none';
+
+            if (!username || !password) {
+                errorEl.textContent = '请填写用户名和密码';
+                errorEl.style.display = 'block';
+                return;
+            }
+            if (mode === 'register' && password.length < 6) {
+                errorEl.textContent = '密码长度至少为6位';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const url = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+                const body = { username, password };
+                if (mode === 'register') body.nickname = nickname || username;
+                const data = await api.post(url, body);
+                api.setToken(data.token);
+                window.location.href = '/index.html';
+            } catch (e) {
+                errorEl.textContent = e.message;
+                errorEl.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

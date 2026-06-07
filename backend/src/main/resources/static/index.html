@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>海龟汤 - 首页</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a2e; color: #eee; min-height: 100vh;
+        }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 20px; background: #16213e;
+        }
+        .header h2 { font-size: 20px; }
+        .header .user-info { color: #8892b0; font-size: 14px; cursor: pointer; }
+        .content { padding: 20px; padding-bottom: 70px; }
+        .hero {
+            text-align: center; padding: 30px 20px;
+            background: linear-gradient(135deg, #16213e, #0f3460);
+            border-radius: 16px; margin-bottom: 16px;
+        }
+        .hero .icon { font-size: 48px; margin-bottom: 8px; }
+        .hero h1 { font-size: 22px; margin-bottom: 4px; }
+        .hero p { color: #8892b0; font-size: 13px; line-height: 1.6; }
+        .category-tabs {
+            display: flex; gap: 8px; margin-bottom: 16px;
+        }
+        .cat-tab {
+            flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #2a3a5c;
+            background: #16213e; color: #8892b0; font-size: 14px; cursor: pointer;
+            text-align: center; transition: all 0.2s;
+        }
+        .cat-tab.active { background: #e94560; color: #fff; border-color: #e94560; }
+        .draw-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            font-size: 18px; font-weight: 600; cursor: pointer;
+            background: linear-gradient(135deg, #e94560, #f5a623);
+            color: #fff; margin-bottom: 20px;
+        }
+        .draw-btn:active { opacity: 0.85; }
+        .puzzle-card {
+            background: #16213e; border-radius: 14px; padding: 20px;
+            margin-bottom: 16px; display: none;
+        }
+        .puzzle-card .badge-row { display: flex; gap: 6px; margin-bottom: 10px; }
+        .puzzle-card .badge {
+            font-size: 11px; padding: 2px 10px; border-radius: 12px;
+            background: #0f3460; color: #8892b0;
+        }
+        .puzzle-card .badge.category { background: #e94560; color: #fff; }
+        .puzzle-card h3 { margin-bottom: 8px; color: #f5a623; font-size: 17px; }
+        .puzzle-card .story { color: #ccc; font-size: 15px; line-height: 1.7; margin-bottom: 16px; }
+        .start-btn {
+            width: 100%; padding: 14px; border: none; border-radius: 10px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+            background: #e94560; color: #fff;
+        }
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            display: flex; background: #16213e; border-top: 1px solid #2a3a5c;
+        }
+        .nav-item {
+            flex: 1; text-align: center; padding: 12px 0;
+            color: #8892b0; cursor: pointer; font-size: 12px; text-decoration: none;
+        }
+        .nav-item.active { color: #e94560; }
+        .nav-item .nav-icon { font-size: 22px; display: block; margin-bottom: 2px; }
+        .loading { text-align: center; padding: 30px; color: #8892b0; display: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>海龟汤</h2>
+        <span class="user-info" id="nicknameDisplay" onclick="location.href='/profile.html'"></span>
+    </div>
+    <div class="content">
+        <div class="hero">
+            <div class="icon">🐢</div>
+            <h1>海龟汤推理游戏</h1>
+            <p>你会看到一个离奇的故事谜面<br>向 AI 提问，推理出背后真相</p>
+        </div>
+        <div class="category-tabs">
+            <div class="cat-tab active" onclick="selectCategory('')">全部</div>
+            <div class="cat-tab" onclick="selectCategory('脑洞')">💡 脑洞</div>
+            <div class="cat-tab" onclick="selectCategory('恐怖')">🫣 恐怖</div>
+            <div class="cat-tab" onclick="selectCategory('搞笑')">🤣 搞笑</div>
+        </div>
+        <button class="draw-btn" id="drawBtn" onclick="drawPuzzle()">🎲 随机抽一道题</button>
+        <div class="loading" id="loading">加载中...</div>
+        <div class="puzzle-card" id="puzzleCard">
+            <div class="badge-row">
+                <span class="badge category" id="puzzleCategory"></span>
+                <span class="badge" id="puzzleDifficulty"></span>
+            </div>
+            <h3 id="puzzleTitle"></h3>
+            <div class="story" id="puzzleContent"></div>
+            <button class="start-btn" onclick="startGame()">开始推理</button>
+        </div>
+    </div>
+    <div class="nav-bar">
+        <a class="nav-item active" href="/index.html">
+            <span class="nav-icon">🏠</span>首页
+        </a>
+        <a class="nav-item" href="/history.html">
+            <span class="nav-icon">📋</span>历史
+        </a>
+        <a class="nav-item" href="/leaderboard.html">
+            <span class="nav-icon">🏆</span>排行
+        </a>
+        <a class="nav-item" href="/profile.html">
+            <span class="nav-icon">👤</span>我的
+        </a>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        let currentPuzzleId = null;
+        let selectedCategory = '';
+
+        (async function init() {
+            if (!api.token) {
+                location.href = '/login.html';
+                return;
+            }
+            try {
+                const profile = await api.get('/api/user/profile');
+                document.getElementById('nicknameDisplay').textContent = profile.nickname || profile.username;
+            } catch (e) {
+                location.href = '/login.html';
+            }
+        })();
+
+        function selectCategory(cat) {
+            selectedCategory = cat;
+            document.querySelectorAll('.cat-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.includes(cat) || (cat === '' && tab.textContent.includes('全部')));
+            });
+            document.getElementById('drawBtn').textContent = cat ? '🎲 抽一道' + cat + '题' : '🎲 随机抽一道题';
+            document.getElementById('puzzleCard').style.display = 'none';
+        }
+
+        async function drawPuzzle() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('puzzleCard').style.display = 'none';
+            try {
+                const url = selectedCategory ? '/api/puzzle/random?category=' + selectedCategory : '/api/puzzle/random';
+                const data = await api.get(url);
+                currentPuzzleId = data.id;
+                localStorage.setItem('currentPuzzle', JSON.stringify(data));
+                document.getElementById('puzzleCategory').textContent = data.category || '脑洞';
+                document.getElementById('puzzleDifficulty').textContent = '难度：' + (data.difficulty || '中等');
+                document.getElementById('puzzleTitle').textContent = '📖 ' + data.title;
+                document.getElementById('puzzleContent').textContent = data.content;
+                document.getElementById('puzzleCard').style.display = 'block';
+            } catch (e) {
+                alert(e.message);
+            }
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        async function startGame() {
+            try {
+                const data = await api.post('/api/game/start', { puzzleId: currentPuzzleId });
+                location.href = '/game.html?sessionId=' + data.sessionId;
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+    </script>
+</body>
+</html>
