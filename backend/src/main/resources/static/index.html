@@ -73,9 +73,12 @@
 </head>
 <body>
     <div class="header">
-        <h2>海龟汤</h2>
-        <span class="user-info" id="nicknameDisplay" onclick="location.href='/profile.html'"></span>
-    </div>
+            <h2>海龟汤</h2>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <span class="user-info" id="nicknameDisplay" onclick="location.href='/upload.html'" style="cursor:pointer;font-size:18px;">✏️</span>
+                <span class="user-info" id="nicknameDisplay2" onclick="location.href='/profile.html'"></span>
+            </div>
+        </div>
     <div class="content">
         <div class="hero">
             <div class="icon">🐢</div>
@@ -127,7 +130,7 @@
             }
             try {
                 const profile = await api.get('/api/user/profile');
-                document.getElementById('nicknameDisplay').textContent = profile.nickname || profile.username;
+                document.getElementById('nicknameDisplay2').textContent = profile.nickname || profile.username;
             } catch (e) {
                 location.href = '/login.html';
             }
@@ -151,7 +154,7 @@
                 currentPuzzleId = data.id;
                 localStorage.setItem('currentPuzzle', JSON.stringify(data));
                 document.getElementById('puzzleCategory').textContent = data.category || '脑洞';
-                document.getElementById('puzzleDifficulty').textContent = '难度：' + (data.difficulty || '中等');
+                document.getElementById('puzzleDifficulty').textContent = '难度：' + (data.difficulty || '中等') + ' | 作者：' + (data.author || '未知');
                 document.getElementById('puzzleTitle').textContent = '📖 ' + data.title;
                 document.getElementById('puzzleContent').textContent = data.content;
                 document.getElementById('puzzleCard').style.display = 'block';
