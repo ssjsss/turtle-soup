@@ -59,7 +59,7 @@
 
     <script src="api.js"></script>
     <script>
-        if (!api.token) { location.href = '/login.html'; return; }
+        if (!api.token) { location.href = '/login.html'; } else {
 
         (async function init() {
             try {
@@ -91,6 +91,7 @@
 
         function formatTime(str) {
             return str ? new Date(str).toLocaleDateString('zh-CN') : '';
+        }
         }
     </script>
 </body>
